@@ -20,46 +20,51 @@ julia> DAMMviz()
 ```
 """
 function DAMMviz()
-  fontsize_theme = Theme(fontsize = 30)
+  fontsize_theme = Theme(fontsize = 25)
   set_theme!(fontsize_theme)
 
-  fig = Figure(resolution = (2000, 1800))
+  fig = Figure(resolution = (2000, 2000))
   ax3D = Axis3(fig[1, 2])
   r = 50
-  x = collect(range(0, length=r, stop=40)) # T axis, °C from min to max
-  y = collect(range(0, length=r, stop=0.7)) # M axis, % from min to max
-  X = repeat(1:r, inner=r) # X for DAMM matrix 
-  Y = repeat(1:r, outer=r) # Y for DAMM matrix
-  X2 = repeat(x, inner=r) # T values to fit DAMM on   
-  Y2 = repeat(y, outer=r) # M values to fit DAMM on
+  fine = 10
+  tr = r + fine
+  x = collect(range(0, length=r+10, stop=40)) # T axis, °C from min to max
+  y = collect(sort(unique(vcat(range(0.0,0.02,length=fine),
+  range(0.03,0.7,length=r))))) # M axis, % from min to max
+  X = repeat(1:tr, inner=tr) # X for DAMM matrix 
+  Y = repeat(1:tr, outer=tr) # Y for DAMM matrix
+  X2 = repeat(x, inner=tr) # T values to fit DAMM on   
+  Y2 = repeat(y, outer=tr) # M values to fit DAMM on
   xy = hcat(X2, Y2) # T and M matrix to create DAMM matrix 
 
-  texts = Array{Label}(undef, 8);
+  texts = Array{Label}(undef, 9);
   sliderranges = [
-    1e8:1e8:1e9, # α or p[1]  
+    1e-4:1e-4:10e-3, #1e8:1e8:1e9, # α or p[1]  
     58:1:70, # Ea p[2]
     1e-9:1e-6:1e-5, # kMsx p[3]
     1e-4:1e-3:1e-2, # kMo2 p[4]
-    0.3:0.05:0.8, # porosity p[5]
+    0.3:0.01:0.7, # porosity p[5]
     0.01:0.01:0.1, # sx, p[6]
     0:2:40, # Ts
-    0:0.02:0.7 # θ
+    0:0.02:0.7, # θ
+    0.7:0.1:3.0 # Q10Km
    ]; #
   sliders = [Slider(fig, range = sr) for sr in sliderranges];
-  texts[1] = Label(fig, text= lift(X->string(to_latex("\\alpha_{sx}"), " = ", X, to_latex(" (mgC cm^{-3} h^{-1})")), sliders[1].value), textsize=30, width = Auto(false));
-  texts[2] = Label(fig, text= lift(X->string(to_latex("E_a"), " = ", X, to_latex(" (kJ mol^{-1})")), sliders[2].value), textsize=30, width = Auto(false));
-  texts[3] = Label(fig, text= lift(X->string(to_latex("kM_{sx}"), " = ", round(X, sigdigits = 2), to_latex(" (gC cm^{-3})")), sliders[3].value), textsize=30, width = Auto(false));
-  texts[4] = Label(fig, text= lift(X->string(to_latex("kM_{o2}"), " = ", X, to_latex(" (L L^{-1})")), sliders[4].value), textsize=30, width = Auto(false));
-  texts[5] = Label(fig, text= lift(X->string(to_latex("Porosity"), " = ", X, to_latex(" (m^3 m^{-3})")), sliders[5].value), textsize=30, width = Auto(false));
-  texts[6] = Label(fig, text= lift(X->string(to_latex("S_x"), " = ", X, to_latex(" (gC cm^{-3})")), sliders[6].value), textsize=30, width = Auto(false));
-  texts[7] = Label(fig, text= lift(X->string(to_latex("T_s"), " = ", X, to_latex(" (°C)")), sliders[7].value), textsize=30, width = Auto(false));
-  texts[8] = Label(fig, text= lift(X->string(to_latex("θ"), " = ", X, to_latex(" (m^3 m^{-3})")), sliders[8].value), textsize=30, width = Auto(false));
+  texts[1] = Label(fig, text= lift(X->string(to_latex("\\alpha_{sx}"), " = ", X, to_latex(" (mgC cm^{-3} h^{-1})")), sliders[1].value), textsize=20, width = Auto(false));
+  texts[2] = Label(fig, text= lift(X->string(to_latex("E_a"), " = ", X, to_latex(" (kJ mol^{-1})")), sliders[2].value), textsize=20, width = Auto(false));
+  texts[3] = Label(fig, text= lift(X->string(to_latex("kM_{sx}"), " = ", round(X, sigdigits = 2), to_latex(" (gC cm^{-3})")), sliders[3].value), textsize=20, width = Auto(false));
+  texts[4] = Label(fig, text= lift(X->string(to_latex("kM_{o2}"), " = ", X, to_latex(" (L L^{-1})")), sliders[4].value), textsize=20, width = Auto(false));
+  texts[5] = Label(fig, text= lift(X->string(to_latex("Porosity"), " = ", X, to_latex(" (m^3 m^{-3})")), sliders[5].value), textsize=20, width = Auto(false));
+  texts[6] = Label(fig, text= lift(X->string(to_latex("S_x"), " = ", X, to_latex(" (gC cm^{-3})")), sliders[6].value), textsize=20, width = Auto(false));
+  texts[7] = Label(fig, text= lift(X->string(to_latex("T_s"), " = ", X, to_latex(" (°C)")), sliders[7].value), textsize=20, width = Auto(false));
+  texts[8] = Label(fig, text= lift(X->string(to_latex("θ"), " = ", X, to_latex(" (m^3 m^{-3})")), sliders[8].value), textsize=20, width = Auto(false));
+  texts[9] = Label(fig, text= lift(X->string(to_latex("Q10Km"), " = ", X, to_latex(" (-)")), sliders[9].value), textsize=20, width = Auto(false));
   vertical_sublayout = fig[1, 1] = vgrid!(
     Iterators.flatten(zip(texts, sliders))...;
    ) #width = 200, height = 1000);
 
   αsx = sliders[1].value
-  set_close_to!(sliders[1], 6e8)
+  set_close_to!(sliders[1], 0.002)
   Ea = sliders[2].value
   set_close_to!(sliders[2], 64)
   kMsx = sliders[3].value
@@ -74,8 +79,10 @@ function DAMMviz()
   set_close_to!(sliders[7], 38)
   θ = sliders[8].value 
   set_close_to!(sliders[8], 0.4)
+  Q10Km = sliders[9].value 
+  set_close_to!(sliders[9], 1.0)
 
-  params = @lift([$αsx, $Ea, $kMsx, $kMo2, 0.7, $sx])
+  params = @lift([$αsx, $Ea, $kMsx, $kMo2, $porosity, $sx, $Q10Km])
   DAMM_Matrix = @lift(Matrix(sparse(X, Y, DAMM(xy, $params))))
   
   s3D = surface!(ax3D, x, y, DAMM_Matrix, colormap = Reverse(:Spectral),
@@ -130,6 +137,7 @@ function DAMMviz()
   #FZ = 30; ax2D.xlabelsize = FZ; ax2D.ylabelsize = FZ; ax2D2.xlabelsize = FZ; ax2D2.ylabelsize = FZ;
   #ax2D.xticklabelsize = FZ; ax2D.yticklabelsize = FZ; ax2D2.xticklabelsize = FZ; ax2D2.yticklabelsize = FZ;
   colsize!(fig.layout, 1, Relative(1/2))
+  rowsize!(fig.layout, 2, Relative(1/8))
   fig
   return fig
 end
