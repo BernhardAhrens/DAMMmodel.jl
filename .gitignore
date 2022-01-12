@@ -6,3 +6,4 @@
 # ignore VIM temp files
 *~
 *swp
+.vscode/
